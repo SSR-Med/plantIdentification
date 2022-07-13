@@ -12,6 +12,38 @@ import os
 # Santiago Salazar Ramirez
 
 
+def image_resize(image, width=None, height=None, inter=cv2.INTER_AREA):
+    # initialize the dimensions of the image to be resized and
+    # grab the image size
+    dim = None
+    (h, w) = image.shape[:2]
+
+    # if both the width and height are None, then return the
+    # original image
+    if width is None and height is None:
+        return image
+
+    # check to see if the width is None
+    if width is None:
+        # calculate the ratio of the height and construct the
+        # dimensions
+        r = height / float(h)
+        dim = (int(w * r), height)
+
+    # otherwise, the height is None
+    else:
+        # calculate the ratio of the width and construct the
+        # dimensions
+        r = width / float(w)
+        dim = (width, int(h * r))
+
+    # resize the image
+    resized = cv2.resize(image, dim, interpolation=inter)
+
+    # return the resized image
+    return resized
+
+
 def apply_f_on_rgb(img, f, args):
 
     # Crear una matriz de ceros del tamaño de la imagen de entrada
@@ -195,8 +227,9 @@ def consolidarImagen(grafo, imagen, nombre, direccion, dimensionOriginal):
     fig.savefig(direccionNuevoArchivo)
     # Ahora a reescalar el archivo
     img_resized = cv2.imread(direccionNuevoArchivo, cv2.IMREAD_COLOR)
-    img_resized = cv2.resize(
-        img_resized, dimensionOriginal, interpolation=cv2.INTER_AREA)
+    img_resized = image_resize(
+        img_resized, dimensionOriginal[1], dimensionOriginal[0])
+    img_resized = cv2.detailEnhance(img_resized, sigma_s=10, sigma_r=0.15)
     cv2.imwrite(direccionNuevoArchivo, img_resized)
 
 

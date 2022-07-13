@@ -3,6 +3,7 @@ from tkinter.filedialog import askopenfilename
 from identificadorPlanta import crearImagen
 from tkinter.filedialog import askdirectory
 import time
+import identificadorVideo
 Tk().withdraw()  # we don't want a full GUI, so keep the root window from appearing
 # show an "Open" dialog box and return the path to the selected file
 print("Select your image/video")
@@ -14,4 +15,4 @@ directory = str(askdirectory())
 if filename[-3:] in {'jpg', 'jpeg', 'png'}:
     crearImagen(filename, directory)
 elif filename[-3:] in {'mp4', 'mov', 'wmv', 'flv', 'avi', 'mkv', 'webm'}:
-    pass
+    identificadorVideo.crearVideo(filename, directory)
