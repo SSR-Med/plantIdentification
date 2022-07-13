@@ -123,11 +123,15 @@ def creacionGrafos(imagenVerde):
 # Eliminación de componentes con una cantidad inferior a 50 nodos
 
 
-def eliminarComponentes(grafo, imagen):
+def eliminarComponentes(grafo, imagen, optimizar):
     listaEliminar = []  # Además de poner el pixel a 0 se quita del grafo, para no tenerlo ahí
     Elemento = nx.connected_components(grafo)  # Los componentes del grafo
+    # Constante para eliminar componentes
+    constante = 24
+    if optimizar == False:
+        constante = int(max(imagen.shape[0], imagen.shape[1])/1.2)
     for elemento in Elemento:  # Hora de iterar sobre los componentes del grafo
-        if len(elemento) < 30:  # Esta es la condición para eliminar el componente y poner sus pixeles en 0. Si el componente tiene menos de 2000 nodos entonces se quita
+        if len(elemento) < constante:  # Esta es la condición para eliminar el componente y poner sus pixeles en 0. Si el componente tiene menos de 2000 nodos entonces se quita
             # El elemento es un set, toca pasarlo a lista
             lista = list(elemento)
             # Como este se va a eliminar entonces lo metemos a la listaEliminar
@@ -201,7 +205,7 @@ def encontrarCuadrados(grafo, listaComponent):
 
 # Mostrar el cuadrado rojo alrededor de la imagen
 
-def consolidarImagen(grafo, imagen, nombre, direccion, dimensionOriginal):
+def consolidarImagen(grafo, imagen, nombre, direccion, dimensionOriginal, optimizar):
     fig, ax1 = plt.subplots(1, 1, figsize=(10, 8))
     Elemento = nx.connected_components(grafo)
     for elemento in Elemento:
@@ -227,20 +231,22 @@ def consolidarImagen(grafo, imagen, nombre, direccion, dimensionOriginal):
     fig.savefig(direccionNuevoArchivo)
     # Ahora a reescalar el archivo
     img_resized = cv2.imread(direccionNuevoArchivo, cv2.IMREAD_COLOR)
-    img_resized = image_resize(
-        img_resized, dimensionOriginal[1], dimensionOriginal[0])
-    img_resized = cv2.detailEnhance(img_resized, sigma_s=10, sigma_r=0.15)
+    if optimizar == True:
+        img_resized = image_resize(
+            img_resized, dimensionOriginal[1], dimensionOriginal[0])
+        img_resized = cv2.detailEnhance(img_resized, sigma_s=10, sigma_r=0.15)
     cv2.imwrite(direccionNuevoArchivo, img_resized)
 
 
-def crearImagen(img_path, direccion):
+def crearImagen(img_path, direccion, optimizar):
     # Se lee la imagen
     nombrePath = img_path[:-4]
     img_pathOriginal = cv2.imread(img_path, cv2.IMREAD_COLOR)
     # Original dimensions
     dim = (img_pathOriginal.shape[1], img_pathOriginal.shape[0])
-    img_pathOriginal = cv2.resize(
-        img_pathOriginal, (200, 200), interpolation=cv2.INTER_AREA)
+    if optimizar == True:
+        img_pathOriginal = cv2.resize(
+            img_pathOriginal, (200, 200), interpolation=cv2.INTER_AREA)
     img_path = img_pathOriginal.copy()
     # Se aplica la transformación de gamma
     a = 1
@@ -252,7 +258,8 @@ def crearImagen(img_path, direccion):
     verdeAislado = aislarVerde(img_path)
     grafo = creacionGrafos(verdeAislado)
     # Ahora el grafo actualizado
-    grafo = eliminarComponentes(grafo, verdeAislado)
+    grafo = eliminarComponentes(grafo, verdeAislado, optimizar)
     listaComponent = listaComponente(grafo)
     grafo = encontrarCuadrados(grafo, listaComponent)
-    consolidarImagen(grafo, img_pathOriginal, nombrePath, direccion, dim)
+    consolidarImagen(grafo, img_pathOriginal, nombrePath,
+                     direccion, dim, optimizar)

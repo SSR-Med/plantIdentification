@@ -9,13 +9,16 @@ import identificadorPlanta
 # De video a imagen
 
 
-def videoImagen(video_path):
+def videoImagen(video_path, optimizar):
     vidcap = cv2.VideoCapture(video_path)
     success, image = vidcap.read()
     # Imagenes a guardar
     imagenes_cargadas = []
     while success:
-        img_resized = identificadorPlanta.image_resize(image, 200, 200)
+        if optimizar == True:
+            img_resized = identificadorPlanta.image_resize(image, 200, 200)
+        else:
+            img_resized = image
         imagenes_cargadas.append(img_resized)
         success, image = vidcap.read()
     return imagenes_cargadas
@@ -56,10 +59,10 @@ def crearGrafos(verde):
 # Eliminar los componentes con x cantidad menor de nodos
 
 
-def eliminarComponente(grafos, verde):
+def eliminarComponente(grafos, verde, optimizar):
     for i in range(len(verde)):
         grafos[i] = identificadorPlanta.eliminarComponentes(
-            grafos[i], verde[i])
+            grafos[i], verde[i], optimizar)
 
 # Lista de componentes como lista y no como set
 
@@ -80,7 +83,7 @@ def encontrarCuadradoVideo(grafos, listaComponente):
 # Guardar las imagenes para realizar el video
 
 
-def consolidarImagenVideo(grafoVideo, imagenVideo, nombreVideo, direccionVideo, dimensionVideo):
+def consolidarImagenVideo(grafoVideo, imagenVideo, nombreVideo, direccionVideo, dimensionVideo, optimizar):
     newPath = '{direccionArchivo}/Video'.format(
         direccionArchivo=direccionVideo)
     if not os.path.exists(newPath):
@@ -114,9 +117,11 @@ def consolidarImagenVideo(grafoVideo, imagenVideo, nombreVideo, direccionVideo, 
         fig.savefig(direccionNuevoArchivo)
         # Ahora a reescalar el archivo
         img_resized = cv2.imread(direccionNuevoArchivo, cv2.IMREAD_COLOR)
-        img_resized = identificadorPlanta.image_resize(
-            img_resized, dimensionVideo[1], dimensionVideo[0])
-        img_resized = cv2.detailEnhance(img_resized, sigma_s=10, sigma_r=0.15)
+        if optimizar == True:
+            img_resized = identificadorPlanta.image_resize(
+                img_resized, dimensionVideo[1], dimensionVideo[0])
+            img_resized = cv2.detailEnhance(
+                img_resized, sigma_s=10, sigma_r=0.15)
         cv2.imwrite(direccionNuevoArchivo, img_resized)
     return '{direccionArchivo}/Video'.format(direccionArchivo=direccionVideo)
 
@@ -139,20 +144,20 @@ def renderizarVideo(grafoVideo, direccionImagenes, nombreArchivo, direccionVideo
     out.release()
 
 
-def crearVideo(video_path, direccion):
+def crearVideo(video_path, direccion, optimizar):
     # Obtener resolución del video
     vid = cv2.VideoCapture(video_path)
     dim = (int(vid.get(cv2.CAP_PROP_FRAME_HEIGHT)),
            int(vid.get(cv2.CAP_PROP_FRAME_WIDTH)))
-    imagenes_cargadas = videoImagen(video_path)
+    imagenes_cargadas = videoImagen(video_path, optimizar)
     brillo_aumentado = luzImagen(imagenes_cargadas)
     verdeAjustado = verdeAjustar(brillo_aumentado)
     grafos = crearGrafos(verdeAjustado)
-    eliminarComponente(grafos, verdeAjustado)
+    eliminarComponente(grafos, verdeAjustado, optimizar)
     listaComponentes = listComponent(grafos)
     encontrarCuadradoVideo(grafos, listaComponentes)
     direccionImagenes = consolidarImagenVideo(
-        grafos, imagenes_cargadas, 'Imagen', direccion, dim)
+        grafos, imagenes_cargadas, 'Imagen', direccion, dim, optimizar)
     renderizarVideo(grafos, direccionImagenes, video_path, direccion)
     # Eliminar carpeta de videos
     import shutil
